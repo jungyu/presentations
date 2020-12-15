@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+// Returns a csv from an array of objects with
+// values separated by tabs and rows separated by newlines
+function CSV(array) {
+    // Use first element to choose the keys and the order
+    var keys = Object.keys(array[0]);
+    // Build header
+    var result = keys.join(",") + "\n<br />";
+    // Add the rows
+    array.forEach(function(obj){
+        result += keys.map(k => obj[k]).join(",") + "\n<br />";
+    });
+    return result;
+}
+
+$(document).ready(function(){
+  $("button").click(function(){
+    apiUrl = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0001-001?Authorization=CWB-AAE535A9-78B4-4EC7-854E-B5A3776201BF&format=JSON&elementName=TEMP,HUMD&parameterName%EF%BC%8C=CITY";
+    $.getJSON(apiUrl,function(data){
+      var cwbItems = [];
+      data.records.location.forEach(function(dataItem){
+        var cwbItem = {};
+        Object.keys(dataItem).forEach(function(key) {
+          if (Array.isArray(dataItem[key])) {
+            element = dataItem[key];
+
+            Object.keys(element).forEach(function(elementKey){
+              if(typeof element[elementKey].elementName != 'undefined')
+                cwbItem[element[elementKey].elementName] = element[elementKey].elementValue;
+              if(typeof element[elementKey].parameterName != 'undefined')
+                cwbItem[element[elementKey].parameterName] = element[elementKey].parameterValue;
+              
+            });
+          } else {
+            cwbItem[key] = dataItem[key];
+          }
+        });
+        cwbItem['time'] = cwbItem['time']['obsTime'];
+        cwbItems.push(cwbItem);
+      });
+    
+    //console.log(CSV(cwbItems));
+    $('#cwb-csv').append(CSV(cwbItems));
+    });
+  });
+});
+</script>
+</head>
+<body>
+<button>取得氣象局 API 自動氣象站資料</button>
+<div id="cwb-csv"></div>
+
+</body>
+</html>
